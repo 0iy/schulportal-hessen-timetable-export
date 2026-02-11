@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Schulportal Hessen Universal Timetable Exporter (Encoding Fixed)
+// @name         Schulportal Hessen Universal Timetable Exporter (Print Fix)
 // @namespace    https://github.com/0iy/schulportal-hessen-timetable-export
-// @version      13.0
-// @description  Generates valid ICS files, handles timezones, adds breaks, and fixes German character encoding.
+// @version      13.1
+// @description  Generates valid ICS files, handles timezones, adds breaks, and fixes German character encoding & printing.
 // @author       0iy
 // @homepageURL  https://github.com/0iy/schulportal-hessen-timetable-export
 // @supportURL   https://github.com/0iy/schulportal-hessen-timetable-export/issues
@@ -271,13 +271,11 @@
         const output = [...lessons];
         const dayMap = {};
 
-        // Helper to convert "08:00" to minutes
         const toMins = (t) => {
             const [h, m] = t.split(':').map(Number);
             return h * 60 + m;
         };
 
-        // Group by day
         lessons.forEach(l => {
             if(!dayMap[l.day]) dayMap[l.day] = [];
             dayMap[l.day].push(l);
@@ -335,8 +333,34 @@
         hideModal();
         const targetId = state.currentExportTargetId;
 
-        let css = `@page{size:A4 landscape;margin:1cm}body>*:not(#main),#main>*:not(#content),#content>*:not(#${targetId}){display:none!important}#${targetId}{display:block!important;}.print-buttons,.exporter-btn,.nav-tabs{display:none!important}.stunde{display:none!important}`;
-        selectedIds.forEach(id => css += `.stunde[data-id="${id}"]{display:block!important}`);
+        // FIXED PRINT CSS:
+        let css = `
+            @media print {
+                @page { size: A4 landscape; margin: 0.5cm; }
+                body { visibility: hidden; }
+                #${targetId} {
+                    visibility: visible;
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    margin: 0;
+                    padding: 0;
+                    background: white;
+                }
+                #${targetId} * { visibility: visible; }
+                .print-buttons, .exporter-btn, .nav-tabs, h2+div, h2+div+small, .trenn { display: none !important; }
+                .stunde { display: none !important; }
+        `;
+
+        // Reveal only selected classes
+        selectedIds.forEach(id => {
+            // Escape double quotes in ID if any
+            const safeId = id.replace(/"/g, '\\"');
+            css += `.stunde[data-id="${safeId}"] { display: block !important; }`;
+        });
+
+        css += `}`; // Close media query
 
         const style = document.createElement('style');
         style.id = CONFIG.PRINT_STYLE_ID;
