@@ -1,7 +1,5 @@
 # Schulportal Hessen Timetable Exporter
 
-![Preview](assets/preview.png)
-
 A robust Userscript to export timetables from the Schulportal Hessen (Lanis) to popular calendar apps. It generates RFC 5545 compliant .ics files.
 
 ## Features
